@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:buscador_gifs/ui/gif_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_share/flutter_share.dart';
 import 'package:http/http.dart' as http;
 import 'package:share/share.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -18,7 +18,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<Map> _getGifs() async {
     http.Response response;
-    if (_search == null)
+    if(_search == null || _search!.isEmpty)
       response = await http.get(Uri.parse(
           "https://api.giphy.com/v1/gifs/trending?api_key=9nN3VRsNRd33dUEhcQobVpN1MVGAZoSX&limit=20&rating=r"));
     else
@@ -75,28 +75,29 @@ class _HomePageState extends State<HomePage> {
           ),
           Expanded(
               child: FutureBuilder(
-            future: _getGifs(),
-            builder: (context, snapshot) {
-              switch (snapshot.connectionState) {
-                case ConnectionState.waiting:
-                case ConnectionState.none:
-                  return Container(
-                    width: 200,
-                    height: 200,
-                    alignment: Alignment.center,
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      strokeWidth: 5,
-                    ),
-                  );
-                default:
-                  if (snapshot.hasError)
-                    return Container();
-                  else
-                    return _createGifTable(context, snapshot);
-              }
-            },
-          ))
+                future: _getGifs(),
+                builder: (context, snapshot) {
+                  switch (snapshot.connectionState) {
+                    case ConnectionState.waiting:
+                    case ConnectionState.none:
+                      return Container(
+                        width: 200,
+                        height: 200,
+                        alignment: Alignment.center,
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white),
+                          strokeWidth: 5,
+                        ),
+                      );
+                    default:
+                      if (snapshot.hasError)
+                        return Container();
+                      else
+                        return _createGifTable(context, snapshot);
+                  }
+                },
+              ))
         ],
       ),
     );
@@ -114,47 +115,51 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           if (_search == null || index < snapshot.data["data"].length)
             return GestureDetector(
-              child: Image.network(
-                snapshot.data["data"][index]["images"]["fixed_height"]["url"],
-                height: 300,
-                fit: BoxFit.cover,
-              ),
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            GifPage(snapshot.data["data"][index]))
-                );
-              },
-              onLongPress: () {
-                Share.share(
-                    snapshot.data["data"][index]["images"]["fixed_height"]["url"]);
-              },
+                child: FadeInImage.memoryNetwork(
+                  placeholder: kTransparentImage,
+                  image: snapshot
+                      .data["data"][index]["images"]["fixed_height"]["url"],
+                  height: 300,
+                  fit: BoxFit.cover,
+                ),
+                onTap: ()
+          {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        GifPage(snapshot.data["data"][index]))
             );
+          },
+          onLongPress: () {
+          Share.share(
+          snapshot.data["data"][index]["images"]["fixed_height"]["url"]);
+          },
+          );
           else
-            return Container(
-                child: GestureDetector(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(
-                    Icons.add,
-                    color: Colors.white,
-                    size: 70,
-                  ),
-                  Text(
-                    "Carregar Mais...",
-                    style: TextStyle(color: Colors.white, fontSize: 22),
-                  )
-                ],
-              ),
-              onTap: () {
-                setState(() {
-                  _offset += 19;
-                });
-              },
-            ));
+          return Container(
+          child: GestureDetector(
+          child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+          Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 70,
+          ),
+          Text(
+          "Carregar Mais...",
+          style: TextStyle(color: Colors.white, fontSize: 22),
+          )
+          ],
+          ),
+          onTap: () {
+          setState(() {
+          _offset += 19;
+          });
+          },
+          )
+          );
         });
   }
 }
